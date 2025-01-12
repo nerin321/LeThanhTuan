@@ -1,18 +1,57 @@
-# Issues:
+# Code Optimization: Identifying Issues and Improvements
 
-## Filtering and Sorting Inside useMemo:
+This document provides an analysis of the original code, pointing out the computational inefficiencies and anti-patterns, along with recommended improvements for better performance and maintainability.
 
-Filtering (filter) and sorting (sort) within the same useMemo hook can lead to unnecessary computations, especially when the balances array is large. Since both operations depend on balances, they will both be recalculated every time balances changes, even if only one of the operations is needed.
-The getPriority function is being called multiple times during both the filtering and sorting steps, which results in redundant calculations.
-Using toFixed for Formatting:
+## Issues Identified
 
-Using toFixed() directly for formatting numbers may cause issues with rounding or losing precision when working with floating-point numbers.
-Mapping Data Multiple Times:
+### 1. Redundant Filtering and Sorting in `useMemo`
 
-The code is calling map twice on the sortedBalances array: once to create formattedBalances and again to generate rows. This results in redundant iterations over the array, which can be inefficient.
-Using index as key:
+- **Problem**: Both the filtering and sorting operations are performed together in the `useMemo` hook. This causes both operations to run every time `balances` changes, even if only one operation needs to be updated.
+- **Impact**: This can result in unnecessary computations, especially when dealing with large data sets, leading to performance degradation.
 
-Using index as the key in a list can lead to performance issues, especially when the list changes, because React may not be able to efficiently optimize updates for list items.
-Incorrect Dependencies in useMemo:
+### 2. Using `toFixed()` for Number Formatting
 
-The useMemo hook depends on both balances and prices. However, if only prices changes and balances remains the same, the entire sorting and filtering logic will be recalculated, which is unnecessary.
+- **Problem**: The `toFixed()` method is used to format numbers, which can lead to precision loss or incorrect rounding, especially when dealing with floating-point numbers.
+- **Impact**: This approach may result in inaccurate or imprecise display of numbers, affecting the user experience.
+
+### 3. Mapping Data Multiple Times
+
+- **Problem**: The code calls `map()` twice: once for creating `formattedBalances` and another time for generating `rows`. This results in multiple iterations over the `sortedBalances` array.
+- **Impact**: This redundancy increases computational overhead and reduces performance, particularly with large datasets.
+
+### 4. Using `index` as `key` in Lists
+
+- **Problem**: Using `index` as the `key` for list items can cause performance issues in React. When the list changes (e.g., items are added, removed, or reordered), React may not optimize re-renders effectively.
+- **Impact**: This can lead to unnecessary re-renders or poor performance when updating the UI.
+
+### 5. Incorrect `useMemo` Dependencies
+
+- **Problem**: The `useMemo` hook depends on both `balances` and `prices`. However, `prices` does not affect the sorting or filtering of balances, and changes to `prices` should not trigger a recomputation of sorting/filtering.
+- **Impact**: This results in unnecessary recomputation of the memoized value when `prices` changes, causing inefficiency.
+
+## Recommended Improvements
+
+### 1. Separate Filtering and Sorting
+
+- **Solution**: Separate the filtering and sorting logic to ensure that only the necessary operation is recalculated when data changes.
+- **Benefit**: This minimizes the computational work required when only one operation (e.g., sorting or filtering) needs to be updated.
+
+### 2. Use `toLocaleString()` for Number Formatting
+
+- **Solution**: Replace `toFixed()` with `toLocaleString()`, which provides more control over formatting numbers and handles precision more effectively.
+- **Benefit**: This improves the accuracy of number formatting and supports different locales and number precision requirements.
+
+### 3. Map Data Only Once
+
+- **Solution**: Map over the `sortedBalances` array only once to format balances and create rows in a single pass.
+- **Benefit**: This eliminates redundant iterations and improves performance by reducing the number of times the data needs to be processed.
+
+### 4. Use a Unique Key for List Items
+
+- **Solution**: Instead of using `index`, use a unique key, such as a combination of `currency` and `blockchain`, for each list item.
+- **Benefit**: This improves React's ability to optimize list rendering and prevents unnecessary re-renders, especially when the list changes dynamically.
+
+### 5. Optimize `useMemo` Dependencies
+
+- **Solution**: Adjust the `useMemo` hook to depend only on `balances`, as `prices` does not affect the sorting/filtering of balances.
+- **Benefit**: This ensures that recomputation only occurs when necessary, preventing unnecessary recalculations when `prices` changes.
